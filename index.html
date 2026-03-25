@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>CustomEyez'</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0a0a0a; }
+    select option { background: #141414; color: #e8e0d0; }
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbynIYPfjoqdmTJgr-e9hdWvWM4gol7KB-YOxgohwOf6ZINb3HpHjTXt3pPsFGI8U8U/exec";
+
+    const SMOKE_FLAVORS = ["Original", "No Sugar Added", "Seasonal", "Other"];
+
+    const QUANTITY_CODES_SMOKE = [
+      { value: "0",   label: "0 — Sales lead, no product" },
+      { value: "01",  label: "01 — Sales lead + tasted" },
+      { value: "03",  label: "03 — Sales lead + sample pouch" },
+      { value: "033", label: "033 — Ready to order, needs fulfillment" },
+      { value: "1",   label: "1 — Taster" },
+      { value: "3",   label: "3 — Sampler" },
+      { value: "13",  label: "13 — Taste then sample" },
+      { value: "10",  label: "10 — Taste, no interest" },
+      { value: "33",  label: "33 — Purchase" },
+    ];
+
+    const QUANTITY_CODES_REAL101 = [
+      { value: "0",   label: "0 — Cold lead / passing suggestion" },
+      { value: "01",  label: "01 — Warm lead / referral" },
+      { value: "03",  label: "03 — Conversation now open" },
+      { value: "033", label: "033 — Seller or buyer interest" },
+      { value: "1",   label: "1 — Organic/casual RE conversation" },
+      { value: "3",   label: "3 — Expressed interest in more info" },
+      { value: "13",  label: "13 — Active lead, wants to explore" },
+      { value: "10",  label: "10 — Showed property / pitched, declined" },
+      { value: "33",  label: "33 — Close the deal ASAP" },
+      { value: "330", label: "330 — Committed client, finding property" },
+    ];
+
+    const EXPENSE_CATEGORIES_SMOKE = [
+      "Ingredients","Packaging","Supplies","Sampling",
+      "Platform Fees","Insurance","Marketing","Equipment","Other"
+    ];
+
+    const EXPENSE_CATEGORIES_REAL101 = [
+      "Education","Licensing","Marketing","Technology",
+      "Transportation","Professional Services","Other"
+    ];
+
+    const PAYMENT_METHODS = ["Cash","Debit","Credit","Venmo","Zelle","Other"];
+
+    const colors = {
+      bg: "#0a0a0a",
+      surface: "#111",
+      border: "#1e1e1e",
+      border2: "#252525",
+      text: "#e8e0d0",
+      muted: "#555",
+      dim: "#333",
+      smoke: "#c4783a",
+      real101: "#3a7ac4",
+      success: "#3d6e3d",
+      successText: "#7dba7d",
+    };
+
+    const C = {
+      app: {
+        background: colors.bg,
+        minHeight: "100vh",
+        maxWidth: "430px",
+        margin: "0 auto",
+        fontFamily: "'Georgia', serif",
+        color: colors.text,
+      },
+      header: {
+        padding: "18px 20px 14px",
+        borderBottom: `1px solid ${colors.border}`,
+        background: colors.surface,
+        position: "sticky",
+        top: 0,
+        zIndex: 10,
+      },
+      headerTop: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+      },
+      logo: {
+        fontSize: "20px",
+        fontWeight: "700",
+        letterSpacing: "-0.02em",
+      },
+      horseBadge: (horse) => ({
+        fontFamily: "'Courier New', monospace",
+        fontSize: "9px",
+        letterSpacing: "0.2em",
+        padding: "3px 8px",
+        border: `1px solid ${horse === "smoke" ? colors.smoke : colors.real101}`,
+        color: horse === "smoke" ? colors.smoke : colors.real101,
+        borderRadius: "2px",
+      }),
+      backBtn: {
+        background: "none",
+        border: "none",
+        color: colors.muted,
+        fontSize: "20px",
+        cursor: "pointer",
+        padding: "0",
+        lineHeight: 1,
+        fontFamily: "'Georgia', serif",
+      },
+      homeWrap: { padding: "32px 20px" },
+      homeTitle: {
+        fontFamily: "'Courier New', monospace",
+        fontSize: "10px",
+        letterSpacing: "0.25em",
+        color: colors.muted,
+        marginBottom: "32px",
+        textTransform: "uppercase",
+      },
+      horseCard: (color) => ({
+        padding: "24px",
+        border: `1px solid ${color}22`,
+        borderRadius: "4px",
+        marginBottom: "16px",
+        cursor: "pointer",
+        background: `${color}08`,
+        transition: "all 0.15s",
+      }),
+      horseCardTitle: (color) => ({
+        fontSize: "22px",
+        fontWeight: "700",
+        color: color,
+        marginBottom: "4px",
+        letterSpacing: "-0.02em",
+      }),
+      horseCardSub: {
+        fontFamily: "'Courier New', monospace",
+        fontSize: "10px",
+        color: colors.muted,
+        letterSpacing: "0.1em",
+      },
+      moduleRow: {
+        display: "flex",
+        flexDirection: "column",
+        gap: "10px",
+        padding: "20px",
+      },
+      moduleBtn: {
+        padding: "18px 20px",
+        background: colors.surface,
+        border: `1px solid ${colors.border2}`,
+        borderRadius: "3px",
+        color: colors.text,
+        fontFamily: "'Georgia', serif",
+        fontSize: "17px",
+        cursor: "pointer",
+        textAlign: "left",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+      },
+      moduleMeta: {
+        fontFamily: "'Courier New', monospace",
+        fontSize: "10px",
+        color: colors.muted,
+        letterSpacing: "0.1em",
+      },
+      formWrap: { padding: "20px", paddingBottom: "100px" },
+      fieldGroup: { marginBottom: "18px" },
+      label: {
+        display: "block",
+        fontFamily: "'Courier New', monospace",
+        fontSize: "9px",
+        letterSpacing: "0.2em",
+        color: colors.muted,
+        marginBottom: "7px",
+        textTransform: "uppercase",
+      },
+      required: { color: colors.smoke, marginLeft: "3px" },
+      input: {
+        width: "100%",
+        background: "#141414",
+        border: `1px solid ${colors.border2}`,
+        borderRadius: "3px",
+        padding: "12px 14px",
+        color: colors.text,
+        fontSize: "16px",
+        fontFamily: "'Georgia', serif",
+        boxSizing: "border-box",
+        outline: "none",
+      },
+      select: {
+        width: "100%",
+        background: "#141414",
+        border: `1px solid ${colors.border2}`,
+        borderRadius: "3px",
+        padding: "12px 14px",
+        color: colors.text,
+        fontSize: "15px",
+        fontFamily: "'Georgia', serif",
+        boxSizing: "border-box",
+        outline: "none",
+        appearance: "none",
+      },
+      textarea: {
+        width: "100%",
+        background: "#141414",
+        border: `1px solid ${colors.border2}`,
+        borderRadius: "3px",
+        padding: "12px 14px",
+        color: colors.text,
+        fontSize: "15px",
+        fontFamily: "'Georgia', serif",
+        boxSizing: "border-box",
+        outline: "none",
+        resize: "none",
+        minHeight: "80px",
+      },
+      checkRow: {
+        display: "flex",
+        alignItems: "center",
+        gap: "12px",
+        padding: "13px 14px",
+        background: "#141414",
+        border: `1px solid ${colors.border2}`,
+        borderRadius: "3px",
+        cursor: "pointer",
+      },
+      checkLabel: {
+        fontFamily: "'Courier New', monospace",
+        fontSize: "11px",
+        color: "#888",
+        letterSpacing: "0.05em",
+      },
+      rankRow: { display: "flex", gap: "8px" },
+      rankBtn: (active, color) => ({
+        flex: 1,
+        padding: "12px 0",
+        background: active ? `${color}22` : "#141414",
+        border: `1px solid ${active ? color : colors.border2}`,
+        borderRadius: "3px",
+        color: active ? color : colors.muted,
+        fontFamily: "'Courier New', monospace",
+        fontSize: "13px",
+        cursor: "pointer",
+        transition: "all 0.1s",
+      }),
+      submitBtn: (color) => ({
+        position: "fixed",
+        bottom: "24px",
+        left: "50%",
+        transform: "translateX(-50%)",
+        width: "calc(100% - 40px)",
+        maxWidth: "390px",
+        padding: "16px",
+        background: color,
+        border: "none",
+        borderRadius: "3px",
+        color: "#fff",
+        fontSize: "13px",
+        fontFamily: "'Courier New', monospace",
+        letterSpacing: "0.2em",
+        textTransform: "uppercase",
+        cursor: "pointer",
+        zIndex: 50,
+        boxShadow: `0 4px 20px ${color}44`,
+      }),
+      successWrap: { padding: "48px 20px", textAlign: "center" },
+      successIcon: { fontSize: "40px", marginBottom: "16px" },
+      successTitle: {
+        fontFamily: "'Courier New', monospace",
+        fontSize: "12px",
+        letterSpacing: "0.2em",
+        color: colors.successText,
+        marginBottom: "8px",
+      },
+      successSub: { fontSize: "13px", color: colors.muted, marginBottom: "32px" },
+      anotherBtn: (color) => ({
+        padding: "14px 28px",
+        background: "transparent",
+        border: `1px solid ${color}`,
+        borderRadius: "3px",
+        color: color,
+        fontFamily: "'Courier New', monospace",
+        fontSize: "11px",
+        letterSpacing: "0.15em",
+        cursor: "pointer",
+        marginRight: "10px",
+      }),
+      homeAgainBtn: {
+        padding: "14px 28px",
+        background: "transparent",
+        border: `1px solid ${colors.border2}`,
+        borderRadius: "3px",
+        color: colors.muted,
+        fontFamily: "'Courier New', monospace",
+        fontSize: "11px",
+        letterSpacing: "0.15em",
+        cursor: "pointer",
+      },
+      divider: { borderTop: `1px solid ${colors.border}`, margin: "20px 0" },
+      sectionLabel: {
+        fontFamily: "'Courier New', monospace",
+        fontSize: "9px",
+        letterSpacing: "0.25em",
+        color: colors.dim,
+        textTransform: "uppercase",
+        marginBottom: "14px",
+      },
+    };
+
+    const today = () => new Date().toLocaleDateString("en-US", {
+      month: "short", day: "numeric", year: "numeric"
+    });
+
+    function PeopleForm({ horse, onSuccess, accentColor, quantityCodes }) {
+      const [form, setForm] = useState({
+        name: "", type: "", phone: "", email: "",
+        social: "", other_contact: "", source: "",
+        location: "", quantity: "", flavor: "",
+        lead_temp: "", survey: false, notes: ""
+      });
+      const [saving, setSaving] = useState(false);
+      const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+      const submit = async () => {
+        if (!form.name.trim()) { alert("Name is required."); return; }
+        setSaving(true);
+        const payload = {
+          sheet: `${horse === "smoke" ? "SmokeMagic" : "Real101"}_People`,
+          date: today(),
+          horse: horse === "smoke" ? "Smoke Magic" : "Real101",
+          ...form,
+          survey: form.survey ? "YES" : "NO",
+        };
+        try {
+          await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) });
+          onSuccess();
+        } catch(e) { alert("Submission failed. Check your Apps Script URL."); }
+        setSaving(false);
+      };
+
+      return (
+        <div style={C.formWrap}>
+          <div style={C.sectionLabel}>Identity</div>
+          <div style={C.fieldGroup}>
+            <label style={C.label}>Name<span style={C.required}>*</span></label>
+            <input style={C.input} placeholder="Person or business name"
+              value={form.name} onChange={e => set("name", e.target.value)} />
+          </div>
+          <div style={C.fieldGroup}>
+            <label style={C.label}>Type</label>
+            <select style={C.select} value={form.type} onChange={e => set("type", e.target.value)}>
+              <option value="">Select type...</option>
+              {horse === "smoke" ? (
+                <>
+                  <option>Taster</option>
+                  <option>Customer</option>
+                  <option>Potential Reseller</option>
+                </>
+              ) : (
+                <>
+                  <option>Prospect</option>
+                  <option>Client</option>
+                  <option>Referral Source</option>
+                  <option>Agent/Broker</option>
+                </>
+              )}
+            </select>
+          </div>
+
+          <div style={C.divider} />
+          <div style={C.sectionLabel}>Contact</div>
+          <div style={C.fieldGroup}>
+            <label style={C.label}>Phone</label>
+            <input style={C.input} placeholder="Phone number"
+              value={form.phone} onChange={e => set("phone", e.target.value)} />
+          </div>
+          <div style={C.fieldGroup}>
+            <label style={C.label}>Email</label>
+            <input style={C.input} placeholder="Email address"
+              value={form.email} onChange={e => set("email", e.target.value)} />
+          </div>
+          <div style={C.fieldGroup}>
+            <label style={C.label}>Social Media</label>
+            <input style={C.input} placeholder="@handle or platform/handle"
+              value={form.social} onChange={e => set("social", e.target.value)} />
+          </div>
+          <div style={C.fieldGroup}>
+            <label style={C.label}>Other</label>
+            <input style={C.input} placeholder="Website, LinkedIn, anything else"
+              value={form.other_contact} onChange={e => set("other_contact", e.target.value)} />
+          </div>
+
+          <div style={C.divider} />
+          <div style={C.sectionLabel}>Interaction</div>
+          <div style={C.fieldGroup}>
+            <label style={C.label}>Source</label>
+            <input style={C.input} placeholder="How'd you meet? Referral from who?"
+              value={form.source} onChange={e => set("source", e.target.value)} />
+          </div>
+          <div style={C.fieldGroup}>
+            <label style={C.label}>Location</label>
+            <input style={C.input} placeholder="Event name, place, or both"
+              value={form.location} onChange={e => set("location", e.target.value)} />
+          </div>
+          <div style={C.fieldGroup}>
+            <label style={C.label}>Quantity Code</label>
+            <select style={C.select} value={form.quantity} onChange={e => set("quantity", e.target.value)}>
+              <option value="">Select code...</option>
+              {quantityCodes.map(q => (
+                <option key={q.value} value={q.value}>{q.label}</option>
+              ))}
+            </select>
+          </div>
+          {horse === "smoke" && (
+            <div style={C.fieldGroup}>
+              <label style={C.label}>Flavor</label>
+              <select style={C.select} value={form.flavor} onChange={e => set("flavor", e.target.value)}>
+                <option value="">Select flavor...</option>
+                {SMOKE_FLAVORS.map(f => <option key={f}>{f}</option>)}
+              </select>
+            </div>
+          )}
+
+          <div style={C.divider} />
+          <div style={C.sectionLabel}>Status</div>
+          <div style={C.fieldGroup}>
+            <label style={C.label}>Lead Temperature</label>
+            <div style={C.rankRow}>
+              {[1,2,3,4,5].map(n => (
+                <button key={n}
+                  style={C.rankBtn(form.lead_temp === String(n), accentColor)}
+                  onClick={() => set("lead_temp", String(n))}>
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+          {horse === "smoke" && (
+            <div style={C.fieldGroup}>
+              <div style={C.checkRow} onClick={() => set("survey", !form.survey)}>
+                <input type="checkbox" checked={form.survey} onChange={() => {}}
+                  style={{ width: "18px", height: "18px", accentColor, cursor: "pointer" }} />
+                <span style={C.checkLabel}>SURVEY COMPLETED</span>
+              </div>
+            </div>
+          )}
+
+          <div style={C.divider} />
+          <div style={C.fieldGroup}>
+            <label style={C.label}>Notes</label>
+            <textarea style={C.textarea}
+              placeholder="Reaction, context, follow-up needed, anything..."
+              value={form.notes} onChange={e => set("notes", e.target.value)} />
+          </div>
+
+          <button style={C.submitBtn(accentColor)} onClick={submit}>
+            {saving ? "SUBMITTING..." : "LOG ENTRY →"}
+          </button>
+        </div>
+      );
+    }
+
+    function ProductionForm({ onSuccess }) {
+      const [form, setForm] = useState({
+        batch_number: "", flavor: "", process_qty: "",
+        real_qty: "", oranges_used: "", smoke_duration: "",
+        oven_duration: "", humidity_flag: "", quality_rank: "",
+        purpose: "", est_retail_value: "", packaging_output: "", notes: ""
+      });
+      const [saving, setSaving] = useState(false);
+      const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+      const submit = async () => {
+        if (!form.batch_number.trim()) { alert("Batch # is required."); return; }
+        setSaving(true);
+        const payload = {
+          sheet: "SmokeMagic_Production",
+          date: today(),
+          horse: "Smoke Magic",
+          ...form,
+        };
+        try {
+          await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) });
+          onSuccess();
+        } catch(e) { alert("Submission failed. Check your Apps Script URL."); }
+        setSaving(false);
+      };
+
+      return (
+        <div style={C.formWrap}>
+          <div style={C.sectionLabel}>Batch Identity</div>
+          <div style={C.fieldGroup}>
+            <label style={C.label}>Batch #<span style={C.required}>*</span></label>
+            <input style={C.input} placeholder="e.g. 091"
+              value={form.batch_number} onChange={e => set("batch_number", e.target.value)} />
+          </div>
+          <div style={C.fieldGroup}>
+            <label style={C.label}>Flavor</label>
+            <select style={C.select} value={form.flavor} onChange={e => set("flavor", e.target.value)}>
+              <option value="">Select flavor...</option>
+              {SMOKE_FLAVORS.map(f => <option key={f}>{f}</option>)}
+            </select>
+          </div>
+
+          <div style={C.divider} />
+          <div style={C.sectionLabel}>Yield</div>
+          <div style={C.fieldGroup}>
+            <label style={C.label}>Oranges Used</label>
+            <input style={C.input} type="number" placeholder="# of oranges"
+              value={form.oranges_used} onChange={e => set("oranges_used", e.target.value)} />
+          </div>
+          <div style={C.fieldGroup}>
+            <label style={C.label}>Process Qty (pre-finish)</label>
+            <input style={C.input} type="number" placeholder="Slices before finish"
+              value={form.process_qty} onChange={e => set("process_qty", e.target.value)} />
+          </div>
+          <div style={C.fieldGroup}>
+            <label style={C.label}>Real Qty (ready for sale)</label>
+            <input style={C.input} type="number" placeholder="Finished slices"
+              value={form.real_qty} onChange={e => set("real_qty", e.target.value)} />
+          </div>
+          <div style={C.fieldGroup}>
+            <label style={C.label}>Packaging Output (pouches)</label>
+            <input style={C.input} type="number" placeholder="# of pouches filled"
+              value={form.packaging_output} onChange={e => set("packaging_output", e.target.value)} />
+          </div>
+          <div style={C.fieldGroup}>
+            <label style={C.label}>Est. Retail Value ($)</label>
+            <input style={C.input} type="number" placeholder="Real qty × price per slice"
+              value={form.est_retail_value} onChange={e => set("est_retail_value", e.target.value)} />
+          </div>
+
+          <div style={C.divider} />
+          <div style={C.sectionLabel}>Process</div>
+          <div style={C.fieldGroup}>
+            <label style={C.label}>Smoke Duration (hrs)</label>
+            <input style={C.input} type="number" placeholder="Hours in smoker"
+              value={form.smoke_duration} onChange={e => set("smoke_duration", e.target.value)} />
+          </div>
+          <div style={C.fieldGroup}>
+            <label style={C.label}>Oven Finish Duration (hrs)</label>
+            <input style={C.input} type="number" placeholder="Hours in convection"
+              value={form.oven_duration} onChange={e => set("oven_duration", e.target.value)} />
+          </div>
+          <div style={C.fieldGroup}>
+            <label style={C.label}>Humidity / Conditions</label>
+            <div style={C.rankRow}>
+              {["😎","🌤","🌧","💦","🌊"].map((icon, i) => (
+                <button key={i}
+                  style={C.rankBtn(form.humidity_flag === String(i+1), colors.smoke)}
+                  onClick={() => set("humidity_flag", String(i+1))}>
+                  {icon}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div style={C.divider} />
+          <div style={C.sectionLabel}>Quality & Purpose</div>
+          <div style={C.fieldGroup}>
+            <label style={C.label}>Quality Rank (1–5)</label>
+            <div style={C.rankRow}>
+              {[1,2,3,4,5].map(n => (
+                <button key={n}
+                  style={C.rankBtn(form.quality_rank === String(n), colors.smoke)}
+                  onClick={() => set("quality_rank", String(n))}>
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div style={C.fieldGroup}>
+            <label style={C.label}>Purpose</label>
+            <select style={C.select} value={form.purpose} onChange={e => set("purpose", e.target.value)}>
+              <option value="">Select...</option>
+              <option>Filling Order</option>
+              <option>Building Inventory</option>
+              <option>Sampling / Promo</option>
+              <option>R&D</option>
+            </select>
+          </div>
+
+          <div style={C.divider} />
+          <div style={C.fieldGroup}>
+            <label style={C.label}>Batch Notes</label>
+            <textarea style={C.textarea}
+              placeholder="Anything notable — science, anomalies, adjustments..."
+              value={form.notes} onChange={e => set("notes", e.target.value)} />
+          </div>
+
+          <button style={C.submitBtn(colors.smoke)} onClick={submit}>
+            {saving ? "SUBMITTING..." : "LOG BATCH →"}
+          </button>
+        </div>
+      );
+    }
+
+    function ExpenseForm({ horse, onSuccess, accentColor }) {
+      const [form, setForm] = useState({
+        category: "", vendor: "", amount: "",
+        payment_method: "", receipt: false, notes: ""
+      });
+      const [saving, setSaving] = useState(false);
+      const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+      const categories = horse === "smoke" ? EXPENSE_CATEGORIES_SMOKE : EXPENSE_CATEGORIES_REAL101;
+
+      const submit = async () => {
+        if (!form.amount.trim()) { alert("Amount is required."); return; }
+        setSaving(true);
+        const payload = {
+          sheet: "Expenses",
+          date: today(),
+          horse: horse === "smoke" ? "Smoke Magic" : "Real101",
+          ...form,
+          receipt: form.receipt ? "YES" : "NO",
+        };
+        try {
+          await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) });
+          onSuccess();
+        } catch(e) { alert("Submission failed. Check your Apps Script URL."); }
+        setSaving(false);
+      };
+
+      return (
+        <div style={C.formWrap}>
+          <div style={C.fieldGroup}>
+            <label style={C.label}>Category</label>
+            <select style={C.select} value={form.category} onChange={e => set("category", e.target.value)}>
+              <option value="">Select category...</option>
+              {categories.map(c => <option key={c}>{c}</option>)}
+            </select>
+          </div>
+          <div style={C.fieldGroup}>
+            <label style={C.label}>Vendor / Source</label>
+            <input style={C.input} placeholder="Who'd you pay?"
+              value={form.vendor} onChange={e => set("vendor", e.target.value)} />
+          </div>
+          <div style={C.fieldGroup}>
+            <label style={C.label}>Amount ($)<span style={C.required}>*</span></label>
+            <input style={C.input} type="number" placeholder="0.00"
+              value={form.amount} onChange={e => set("amount", e.target.value)} />
+          </div>
+          <div style={C.fieldGroup}>
+            <label style={C.label}>Payment Method</label>
+            <select style={C.select} value={form.payment_method} onChange={e => set("payment_method", e.target.value)}>
+              <option value="">Select...</option>
+              {PAYMENT_METHODS.map(m => <option key={m}>{m}</option>)}
+            </select>
+          </div>
+          <div style={C.fieldGroup}>
+            <div style={C.checkRow} onClick={() => set("receipt", !form.receipt)}>
+              <input type="checkbox" checked={form.receipt} onChange={() => {}}
+                style={{ width: "18px", height: "18px", accentColor, cursor: "pointer" }} />
+              <span style={C.checkLabel}>RECEIPT CAPTURED</span>
+            </div>
+          </div>
+          <div style={C.fieldGroup}>
+            <label style={C.label}>Notes</label>
+            <textarea style={C.textarea} placeholder="Context, purpose, anything relevant..."
+              value={form.notes} onChange={e => set("notes", e.target.value)} />
+          </div>
+          <button style={C.submitBtn(accentColor)} onClick={submit}>
+            {saving ? "SUBMITTING..." : "LOG EXPENSE →"}
+          </button>
+        </div>
+      );
+    }
+
+    function SuccessScreen({ horse, module, onAgain, onHome, accentColor }) {
+      return (
+        <div style={C.successWrap}>
+          <div style={C.successIcon}>
+            {module === "people" ? "🤝" : module === "production" ? "🔥" : "💸"}
+          </div>
+          <div style={C.successTitle}>LOGGED SUCCESSFULLY</div>
+          <div style={C.successSub}>Data sent to Google Sheets</div>
+          <div>
+            <button style={C.anotherBtn(accentColor)} onClick={onAgain}>+ ANOTHER</button>
+            <button style={C.homeAgainBtn} onClick={onHome}>HOME</button>
+          </div>
+        </div>
+      );
+    }
+
+    function CustomEyez() {
+      const [horse, setHorse] = useState(null);
+      const [module, setModule] = useState(null);
+      const [success, setSuccess] = useState(false);
+
+      const accentColor = horse === "smoke" ? colors.smoke : colors.real101;
+      const reset = () => { setHorse(null); setModule(null); setSuccess(false); };
+      const resetModule = () => { setModule(null); setSuccess(false); };
+      const onSuccess = () => setSuccess(true);
+      const onAgain = () => setSuccess(false);
+
+      const getTitle = () => {
+        if (!horse) return "CustomEyez'";
+        if (!module) return horse === "smoke" ? "Smoke Magic" : "Real101";
+        return module === "people" ? "People" : module === "production" ? "Production" : "Expenses";
+      };
+
+      const quantityCodes = horse === "smoke" ? QUANTITY_CODES_SMOKE : QUANTITY_CODES_REAL101;
+
+      return (
+        <div style={C.app}>
+          <div style={C.header}>
+            <div style={C.headerTop}>
+              {horse ? (
+                <button style={C.backBtn} onClick={module ? resetModule : reset}>←</button>
+              ) : (
+                <div style={{ width: "24px" }} />
+              )}
+              <div style={C.logo}>{getTitle()}</div>
+              {horse ? (
+                <div style={C.horseBadge(horse)}>
+                  {horse === "smoke" ? "SMOKE" : "RE"}
+                </div>
+              ) : (
+                <div style={{ width: "60px" }} />
+              )}
+            </div>
+          </div>
+
+          {success && (
+            <SuccessScreen
+              horse={horse}
+              module={module}
+              onAgain={onAgain}
+              onHome={reset}
+              accentColor={accentColor}
+            />
+          )}
+
+          {!horse && !success && (
+            <div style={C.homeWrap}>
+              <div style={C.homeTitle}>Select Horse</div>
+              <div style={C.horseCard(colors.smoke)} onClick={() => setHorse("smoke")}>
+                <div style={C.horseCardTitle(colors.smoke)}>Smoke Magic</div>
+                <div style={C.horseCardSub}>33 SMOKE · ORANGE CRISPS</div>
+              </div>
+              <div style={C.horseCard(colors.real101)} onClick={() => setHorse("real101")}>
+                <div style={C.horseCardTitle(colors.real101)}>Real101</div>
+                <div style={C.horseCardSub}>REAL ESTATE · ATLANTA</div>
+              </div>
+            </div>
+          )}
+
+          {horse && !module && !success && (
+            <div style={C.moduleRow}>
+              <button style={C.moduleBtn} onClick={() => setModule("people")}>
+                <span>People</span>
+                <span style={C.moduleMeta}>LEADS · CONTACTS · CUSTOMERS</span>
+              </button>
+              {horse === "smoke" && (
+                <button style={C.moduleBtn} onClick={() => setModule("production")}>
+                  <span>Production</span>
+                  <span style={C.moduleMeta}>BATCHES · YIELD · INVENTORY</span>
+                </button>
+              )}
+              <button style={C.moduleBtn} onClick={() => setModule("expenses")}>
+                <span>Expenses</span>
+                <span style={C.moduleMeta}>COSTS · RECEIPTS · TRACKING</span>
+              </button>
+            </div>
+          )}
+
+          {horse && module && !success && (
+            <>
+              {module === "people" && (
+                <PeopleForm
+                  horse={horse}
+                  onSuccess={onSuccess}
+                  accentColor={accentColor}
+                  quantityCodes={quantityCodes}
+                />
+              )}
+              {module === "production" && horse === "smoke" && (
+                <ProductionForm onSuccess={onSuccess} />
+              )}
+              {module === "expenses" && (
+                <ExpenseForm
+                  horse={horse}
+                  onSuccess={onSuccess}
+                  accentColor={accentColor}
+                />
+              )}
+            </>
+          )}
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<CustomEyez />);
+  </script>
+</body>
+</html>
